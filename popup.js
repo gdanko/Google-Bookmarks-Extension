@@ -1,9 +1,7 @@
 if (window.top === window) {
 	$(document).ready(function() {
-		var isLoaded;
 		var extensionSettings;
 		var bookmarksData;
-		var bookmarksData1;
 
 		// Begin DOM injection
 		$('body').append('<div id="gbm-master">');
@@ -180,26 +178,31 @@ if (window.top === window) {
 			var messageData = msgEvent.message;
 
 			if (messageName === 'buttonPushed') {
-				isLoaded = messageData[0];
-				extensionSettings = messageData[1];
-				bookmarksData = messageData[2];
+				extensionSettings = messageData[0];
+				bookmarksData = messageData[1];
 				if (bookmarksPopup.dialog('isOpen')) {
 					bookmarksPopup.dialog('close');
 					return;
 				}
-
-				if(isLoaded == 0) {
-					// This should only happen once
-					parseSettings(extensionSettings);
-					if(extensionSettings.debugMode == true) {
-						console.log(extensionSettings.debugText + "Appending the DOM.");
+				parseSettings(extensionSettings);
+				
+				if(extensionSettings.debugMode == true) {
+					if($('#gbm-labels').length == 0) {
+						console.log("DOM not loaded");
+					} else {
+						console.log("DOM loaded");
+						console.log($('#gbm-labels').length);
 					}
-					$('#gbm-content').children().empty();
-					$('#gbm-content').jstree('destroy')
-					$('#gbm-content').append(bookmarksData);
-					generateTree();
-					safari.self.tab.dispatchMessage('dataLoaded')
 				}
+
+				if(extensionSettings.debugMode == true) {
+					console.log(extensionSettings.debugText + "Appending the DOM.");
+				}
+				$('#gbm-content').children().empty();
+				$('#gbm-content').jstree('destroy')
+				$('#gbm-content').append(bookmarksData);
+				generateTree();
+				safari.self.tab.dispatchMessage('dataLoaded')
 				bookmarksPopup.dialog('open');
 				return;	
 			}

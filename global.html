@@ -9,7 +9,6 @@
 				var stuffToSend = [];
 				var debugMode = true;
 				var debugText = '[DEBUG] ';
-				var isLoaded = 0;
 				var bookmarkItems = [];
 				var bookmarksData = '<ul id="gbm-labels">';
 		
@@ -148,11 +147,7 @@
 					// Button listener is useless until the data is loaded
 					safari.application.addEventListener("command", function(event) {
 						if(event.command === 'toggle-popup') {
-							if(debugMode == true) {
-								console.log(debugText + (new Date()).getTime() + " isLoaded = " + isLoaded);
-							}
 							stuffToSend = [];
-							stuffToSend.push(isLoaded);
 							stuffToSend.push(extensionSettings);
 							stuffToSend.push(bookmarksData);
 							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
@@ -174,10 +169,6 @@
 							var activeTab = safari.application.activeBrowserWindow.activeTab();
 							activeTab.url = messageData;
 						}
-					}
-
-					else if(messageName === 'dataLoaded') {
-						isLoaded = 1;
 					}
 
 				}, false);
