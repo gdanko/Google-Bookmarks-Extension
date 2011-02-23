@@ -1,0 +1,2 @@
+* Implement Add/Edit/Delete
+* Protect the CSS from other sites' overrides because stupid Safari will not allow me to isolate this into its own popup.
