@@ -2,16 +2,8 @@ if (window.top === window) {
 	$(document).ready(function() {
 		var isLoaded;
 		var extensionSettings;
-		var bookmarkItems = [];
 		var bookmarksData;
-		
-		function bookmarkItem(id, title, url, timestamp, label) {
-			this.id = id;
-			this.title = title;
-			this.url = url;
-			this.timestamp = timestamp;
-			this.label = label;
-		}
+		var bookmarksData1;
 
 		// Begin DOM injection
 		$('body').append('<div id="gbm-master">');
@@ -183,29 +175,6 @@ if (window.top === window) {
 			}
 		});
 
-		Array.prototype.uniqueByKey = function(array, key) {
-			// unique = bookmarkLabels.uniqueByKey(bookmarkItems, "label").sort();
-			var r = [];
-			for(var i = 0; i < array.length; i++) {
-				if(r.indexOf(array[i][key]) == -1) {
-					r.push(array[i][key]);
-				}
-			}
-			return r;
-		}
-
-		Array.prototype.unique = function () {
-		    var r = new Array();
-		    for(var i = 0, n = this.length; i < n; i++) {
-		        if (this.lastIndexOf(this[i]) == i) r.push(this[i]);
-		    }
-		    return r;
-		}
-
-		$.expr[':'].contentIs = function(el, idx, meta) {
-		    return $(el).text() === meta[3];
-		};
-
 		function messageHandler(msgEvent) {
 			var messageName = msgEvent.name;
 			var messageData = msgEvent.message;
@@ -213,31 +182,26 @@ if (window.top === window) {
 			if (messageName === 'buttonPushed') {
 				isLoaded = messageData[0];
 				extensionSettings = messageData[1];
-				
+				bookmarksData = messageData[2];
 				if (bookmarksPopup.dialog('isOpen')) {
 					bookmarksPopup.dialog('close');
 					return;
 				}
 
-				parseSettings(extensionSettings);
-
-				retrieveXML(function(bookmarkItems) {
+				if(isLoaded == 0) {
+					// This should only happen once
+					parseSettings(extensionSettings);
+					if(extensionSettings.debugMode == true) {
+						console.log(extensionSettings.debugText + "Appending the DOM.");
+					}
+					$('#gbm-content').children().empty();
+					$('#gbm-content').jstree('destroy')
+					$('#gbm-content').append(bookmarksData);
 					generateTree();
-					bookmarksPopup.dialog('open');
-					window.open("", "myPopup", "status=0, toolbar=0, location=0, menubar=0, directories=0, resizable=0, height=600, width=400, top=10, left=10");
-				
-				});
-
-				/*if(isLoaded != 10) {
-					retrieveXML(function(bookmarkItems) {
-						generateTree();
-						bookmarksPopup.dialog('open');
-						safari.self.tab.dispatchMessage('dataLoaded');
-					});
-					return;
-				} else if(isLoaded == 1) {
-					bookmarksPopup.dialog('open');
-				}*/
+					safari.self.tab.dispatchMessage('dataLoaded')
+				}
+				bookmarksPopup.dialog('open');
+				return;	
 			}
 
 			if (messageName === 'settingChange') {
@@ -303,88 +267,10 @@ if (window.top === window) {
 			}
 		}
 
-		function isBookmark(url) {
-			console.log(bookmarkItems[1]);
-		}
-
 		function parseSettings(extensionSettings) {
 			$('body #gbm-master *').css('font-size', extensionSettings.fontSize);
 			bookmarksPopup.dialog( { 'height' : extensionSettings.popupHeight, 'width' : extensionSettings.popupWidth } );
 			$('#gbm-content').css( { 'overflow-y' : 'auto', 'height' : extensionSettings.popupHeight - 50 } );
-		}
-
-		function retrieveXML(callback) {
-			if(extensionSettings.debugMode == true) {
-				console.log(extensionSettings.debugText + "Force data load requested");
-			}
-			bookmarksData = '<ul id="gbm-labels">';
-			$.ajax({
-				type : "GET",
-				url : "http://www.google.com/bookmarks/",
-				beforeSend : function(XMLHttpRequest) {
-					return true;
-				},
-				data: {
-					zx : (new Date()).getTime(),
-					output : "xml",
-					num : "20000",
-					start : "0"
-				},
-				timeout : 5000,
-				dataType : "xml",
-				success : function(data) {
-					var bookmarkItems = [];
-					var bookmarkLabels = [];
-					$(data).find('label').each(function() {
-						bookmarkLabels.push($(this).text());
-					});
-					bookmarkLabels = bookmarkLabels.unique().sort();
-					for (x = 0; x < bookmarkLabels.length; x++) {
-						bookmarkItemsByLabel = [];
-						bookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="label"><a href="#">' + bookmarkLabels[x] + '</a>';
-						$(data).find("label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
-							var title = $(this).closest('bookmark').find('title').text();
-							var url = $(this).closest('bookmark').find('url').text();
-							var id = $(this).closest('bookmark').find('id').text();
-							var timestamp = $(this).closest('bookmark').find('timestamp').text();
-							var bookmark = new bookmarkItem(id, title, url, timestamp, bookmarkLabels[x]);
-							bookmarkItemsByLabel.push(bookmark)
-						});
-						bookmarkItemsByLabel.sort(function(a, b) {
-							if(extensionSettings.sortKey == "title") {
-								var itemA = a.title.toLowerCase(); itemB = b.title.toLowerCase();
-							} else if(extensionSettings.sortKey == "date") {
-								var itemA = a.timestamp; itemB = b.timestamp;
-							}
-
-							if(extensionSettings.sortOrder == "asc") {
-								if (itemA < itemB)
-									return -1;
-							}
-
-							if(extensionSettings.sortOrder == "desc") {
-								if (itemA > itemB)
-									return -1;
-							}
-						});
-
-						for(var q = 0; q < bookmarkItemsByLabel.length; q++) {
-							bookmarksData += '<ul><li id="' + bookmarkItemsByLabel[q].id + '" label="' + bookmarkItemsByLabel[q].label + '" rel="bookmark" class="googleBookmark" url="' + bookmarkItemsByLabel[q].url + '" timestamp="' + bookmarkItemsByLabel[q].timestamp + '"><a href="#">' + bookmarkItemsByLabel[q].title + '</a></li></ul>';
-						}
-						bookmarkItems.push(bookmarkItemsByLabel);
-						bookmarksData += '</li>' + '\n';
-					}
-					bookmarksData += '</ul>'+ '\n';
-					$('#gbm-content').append(bookmarksData);
-					callback(bookmarkItems);
-				},
-
-				error : function() {
-					var errorData = '<p style="font-weight: bold; color: red">ERROR: error<br><br>';
-					errorData += 'Please <a href="http://www.google.com/accounts/Login">login</a></p>';
-					callback(errorData);
-				}
-			});
 		}
 
 		function generateTree() {

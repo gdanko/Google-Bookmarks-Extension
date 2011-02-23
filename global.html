@@ -3,12 +3,23 @@
 	<head>
 		<meta charset="utf-8">
 		<script type="text/javascript" src="jquery-1.5.min.js"></script>
+		<script type="text/javascript" src="sha1.js"></script>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				var stuffToSend = [];
 				var debugMode = true;
 				var debugText = '[DEBUG] ';
 				var isLoaded = 0;
+				var bookmarkItems = [];
+				var bookmarksData = '<ul id="gbm-labels">';
+		
+				function bookmarkItem(id, title, url, timestamp, label) {
+					this.id = id;
+					this.title = title;
+					this.url = url;
+					this.timestamp = timestamp;
+					this.label = label;
+				}
 
 				function settings(fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, sortKey, sortOrder, debugMode, debugText, openMethod) {
 					this.fontSize = fontSize;
@@ -37,17 +48,117 @@
 					extensionSettings.debugText = debugText;
 					extensionSettings.openMethod = safari.extension.settings.openMethod;
 
-				safari.application.addEventListener("command", function(event) {
-					if(event.command === 'toggle-popup') {
-						if(debugMode == true) {
-							console.log(debugText + (new Date()).getTime() + " isLoaded = " + isLoaded);
+				Array.prototype.uniqueByKey = function(array, key) {
+					// unique = foo.uniqueByKey(bar, "key").sort();
+					var r = [];
+					for(var i = 0; i < array.length; i++) {
+						if(r.indexOf(array[i][key]) == -1) {
+							r.push(array[i][key]);
 						}
-						stuffToSend = [];
-						stuffToSend.push(isLoaded);
-						stuffToSend.push(extensionSettings);
-						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
 					}
-				}, false);
+					return r;
+				}
+
+				Array.prototype.unique = function () {
+					// unique = foo.unique().sort();
+				    var r = [];
+				    for(var i = 0, n = this.length; i < n; i++) {
+				        if (this.lastIndexOf(this[i]) == i) r.push(this[i]);
+				    }
+				    return r;
+				}
+
+				$.expr[':'].contentIs = function(el, idx, meta) {
+				    return $(el).text() === meta[3];
+				};
+
+				function retrieveXML(callback) {
+					if(extensionSettings.debugMode == true) {
+						console.log(extensionSettings.debugText + 'Force data load requested');
+					}
+					$.ajax({
+						type : "GET",
+						url : "https://www.google.com/bookmarks/",
+						beforeSend : function(XMLHttpRequest) {
+							return true;
+						},
+						data: {
+							zx : (new Date()).getTime(),
+							output : "xml",
+							num : "20000",
+							start : "0"
+						},
+						timeout : 5000,
+						dataType : "xml",
+						success : function(data) {
+							var bookmarkItems = [];
+							var bookmarkLabels = [];
+							$(data).find('label').each(function() {
+								bookmarkLabels.push($(this).text());
+							});
+							bookmarkLabels = bookmarkLabels.unique().sort();
+							for (x = 0; x < bookmarkLabels.length; x++) {
+								bookmarkItemsByLabel = [];
+								bookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="label"><a href="#">' + bookmarkLabels[x] + '</a>';
+								$(data).find("label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
+									var title = $(this).closest('bookmark').find('title').text();
+									var url = $(this).closest('bookmark').find('url').text();
+									var id = $(this).closest('bookmark').find('id').text();
+									var timestamp = $(this).closest('bookmark').find('timestamp').text();
+									var bookmark = new bookmarkItem(id, title, url, timestamp, bookmarkLabels[x]);
+									bookmarkItemsByLabel.push(bookmark)
+								});
+								bookmarkItemsByLabel.sort(function(a, b) {
+									if(extensionSettings.sortKey == "title") {
+										var itemA = a.title.toLowerCase(); itemB = b.title.toLowerCase();
+									} else if(extensionSettings.sortKey == "date") {
+										var itemA = a.timestamp; itemB = b.timestamp;
+									}
+
+									if(extensionSettings.sortOrder == "asc") {
+										if (itemA < itemB)
+											return -1;
+									}
+
+									if(extensionSettings.sortOrder == "desc") {
+										if (itemA > itemB)
+											return -1;
+									}
+								});
+
+								for(var q = 0; q < bookmarkItemsByLabel.length; q++) {
+									bookmarksData += '<ul><li id="' + bookmarkItemsByLabel[q].id + '" label="' + bookmarkItemsByLabel[q].label + '" rel="bookmark" class="googleBookmark" url="' + bookmarkItemsByLabel[q].url + '" timestamp="' + bookmarkItemsByLabel[q].timestamp + '"><a href="#">' + bookmarkItemsByLabel[q].title + '</a></li></ul>';
+								}
+								bookmarkItems.push(bookmarkItemsByLabel);
+								bookmarksData += '</li>' + '\n';
+							}
+							bookmarksData += '</ul>'+ '\n';
+							callback(bookmarksData);
+						},
+
+						error : function() {
+							var errorData = '<p style="font-weight: bold; color: red">ERROR: error<br><br>';
+							errorData += 'Please <a href="https://www.google.com/accounts/Login">login</a></p>';
+							callback(errorData);
+						}
+					});
+				}
+
+				retrieveXML(function(bookmarksData) {
+					// Button listener is useless until the data is loaded
+					safari.application.addEventListener("command", function(event) {
+						if(event.command === 'toggle-popup') {
+							if(debugMode == true) {
+								console.log(debugText + (new Date()).getTime() + " isLoaded = " + isLoaded);
+							}
+							stuffToSend = [];
+							stuffToSend.push(isLoaded);
+							stuffToSend.push(extensionSettings);
+							stuffToSend.push(bookmarksData);
+							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
+						}
+					}, false);
+				});
 
 				safari.application.addEventListener('message', function(theEvent) {
 					var messageName = theEvent.name;
