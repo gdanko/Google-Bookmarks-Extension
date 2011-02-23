@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="jquery.tinysort.min.js"></script>
+		<script type="text/javascript" src="sha1.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				// Begin settings
+				var fontSize = safari.extension.settings.fontSize;
+				var jstreeTheme = safari.extension.settings.jstreeTheme;
+				var popupHeight = safari.extension.settings.popupHeight;
+				var popupWidth = safari.extension.settings.popupWidth;
+				var showDotsInTree = safari.extension.settings.showDotsInTree;
+				var showIconsInTree = safari.extension.settings.showIconsInTree;
+				var debugMode = safari.extension.settings.debugMode;
+				var openMethod = safari.extension.settings.openMethod;
+				var extensionSettings = [fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, debugMode];
+				// End settings
+
+				var bookmarkLabels = [];
+				var bookmarksData  = '<ul id="labels">' + '\n';
+				var stuffToSend = [];
+				var debugText = "[DEBUG] ";
+
+				Array.prototype.unique = function () {
+				    var r = new Array();
+				    for(var i = 0, n = this.length; i < n; i++) {
+				        if (this.lastIndexOf(this[i]) == i) r.push(this[i]);
+				    }
+				    return r;
+				}
+
+				$.expr[':'].contentIs = function(el, idx, meta) {
+				    return $(el).text() === meta[3];
+				};
+
+				function retrieveXML(callback) {
+					if(debugMode == true) {
+						console.log(debugText + "Forced data refresh requested...")
+					}
+					$.ajax({
+						type : "GET",
+						url : "http://www.google.com/bookmarks/",
+						beforeSend : function(XMLHttpRequest) {
+							return true;
+						},
+						data: {
+							zx : (new Date()).getTime(),
+							output : "xml",
+							num : "20000",
+							start : "0"
+						},
+						timeout : 5000,
+						dataType : "xml",
+						success : function(data) {
+							bookmarkLabels = [];
+							$(data).find("label").each(function() {
+								bookmarkLabels.push($(this).text());
+							});
+							bookmarkLabels = bookmarkLabels.unique().sort();
+							for (x = 0; x < bookmarkLabels.length; x++) {
+								if(debugMode == true) {
+									console.log(debugText + "Processing label: " + bookmarkLabels[x]);
+								}
+								bookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="folder"><a href="#">' + bookmarkLabels[x] + '</a>' + '\n';
+								$(data).find("label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
+									var title = $(this).closest('bookmark').find('title').text();
+									var url = $(this).closest('bookmark').find('url').text();
+									var id = $(this).closest('bookmark').find('id').text();
+									var timestamp = $(this).closest('bookmark').find('timestamp').text();
+									bookmarksData += '<ul><li id="' + id + '" label="' + bookmarkLabels[x] + '" rel="file" class="googleBookmark" url="' + url + '" timestamp="' + timestamp + '"><a href="#">' + title + '</a></li></ul>' + '\n';
+								});
+								bookmarksData += '</li>' + '\n';
+							}
+							bookmarksData += '</ul>'+ '\n';
+							callback(bookmarksData);
+						},
+
+						error : function() {
+							//var newTab = safari.application.activeBrowserWindow.openTab();
+							//newTab.url = "http://www.google.com/bookmarks";
+							var errorData = '<p style="font-weight: bold; color: red">ERROR: error<br><br>';
+							errorData += 'Please <a href="https://www.google.com/accounts/Login">login</a></p>';
+							callback(errorData);
+						}
+					});
+				}
+
+				safari.application.addEventListener("command", function(event) {
+					if (event.command === 'toggle-popup') {
+						if (localStorage.getItem("bookmarksData") === null) {
+							retrieveXML(function(bookmarksData) {
+								localStorage.removeItem("bookmarksData");
+								localStorage.setItem("bookmarksData", bookmarksData);
+							});
+						}
+						stuffToSend.push(localStorage.bookmarksData);
+						stuffToSend.push(extensionSettings);
+						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
+					}
+				}, false);
+
+				safari.application.addEventListener('message', function(theEvent) {
+					var messageName = theEvent.name;
+					var messageData = theEvent.message;
+					if (messageName === 'openLink') {
+						console.log("openMethod: " + openMethod);
+						if(openMethod == "newTab") {
+							var newTab = safari.application.activeBrowserWindow.openTab();
+						} else if(openMethod == "activeTab") {
+							var newTab = safari.application.activeBrowserWindow.activeTab();
+						} else if(openMethod == "newWindow") {
+							safari.application.openBrowserWindow();
+							var newTab = safari.application.activeBrowserWindow.activeTab();
+						}
+						newTab.url = messageData;
+					}
+
+					else if (messageName === 'refresh') {
+						retrieveXML(function(bookmarksData) {
+							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("dataRefreshed", bookmarksData);
+						});
+					}
+				}, false);
+
+				safari.extension.settings.addEventListener('change', function(event) {
+					if (event.key != 'openMethod') {
+						var settingInfo = [event.key, event.newValue];
+						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("settingChange", settingInfo);
+					} else if(event.key == 'openMethod') {
+						openMethod = event.newValue;
+					}
+				}, false);
+			});
+		</script>
+	</head>
+</html>

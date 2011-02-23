@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var debugMode = true;
+				var debugText = '[DEBUG] ';
+				var bookmarksData = [];
+
+				function bookmarkItem(id, title, url, timestamp, label) {
+					this.id = id;
+					this.title = title;
+					this.url = url;
+					this.timestamp = timestamp;
+					this.label = label;
+				}
+
+				function settings(fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, sortKey, sortOrder, debugMode, debugText, openMethod) {
+					this.fontSize = fontSize;
+					this.jstreeTheme = jstreeTheme;
+					this.popupHeight = popupHeight;
+					this.popupWidth = popupWidth;
+					this.showDotsInTree = showDotsInTree;
+					this.showIconsInTree = showIconsInTree;
+					this.sortKey = sortKey;
+					this.sortOrder = sortOrder;
+					this.debugMode = debugMode;
+					this.debugTest = debugText;
+					this.openMethod = openMethod;
+				}
+
+				var extensionSettings = new settings();
+					extensionSettings.fontSize = safari.extension.settings.fontSize;
+					extensionSettings.jstreeTheme = safari.extension.settings.jstreeTheme;
+					extensionSettings.popupHeight = safari.extension.settings.popupHeight;
+					extensionSettings.popupWidth = safari.extension.settings.popupWidth;
+					extensionSettings.showDotsInTree = safari.extension.settings.showDotsInTree;
+					extensionSettings.showIconsInTree = safari.extension.settings.showIconsInTree;
+					extensionSettings.sortKey = safari.extension.settings.sortKey;
+					extensionSettings.sortOrder = safari.extension.settings.sortOrder;
+					extensionSettings.debugMode = debugMode;
+					extensionSettings.debugText = debugText;
+					extensionSettings.openMethod = safari.extension.settings.openMethod;
+
+				function isBookmark(url) {
+					for(var i = 0; i < bookmarksData.length; i++) {
+						if(bookmarksData[i].url == url) {
+							return 0;
+						}
+					}
+				}
+
+				function retrieveXML(callback) {
+					if(debugMode == true) {
+						console.log(debugText + "Forced data refresh requested...")
+					}
+					$.ajax({
+						type : "GET",
+						url : "http://www.google.com/bookmarks/",
+						beforeSend : function(XMLHttpRequest) {
+							return true;
+						},
+						data: {
+							zx : (new Date()).getTime(),
+							output : "xml",
+							num : "20000",
+							start : "0"
+						},
+						timeout : 5000,
+						dataType : "xml",
+						success : function(data) {
+							$(data).find('bookmark').each(function() {
+								var id = $(this).find('id:first').text();
+								var title = $(this).find('title:first').text();
+								var url = $(this).find('url:first').text();
+								var timestamp = $(this).find('timestamp:first').text();								
+								$(this).find('label').each(function() {
+									var label = $(this).text();
+									var bookmark = new bookmarkItem(id, title, url, timestamp, label);
+									bookmarksData.push(bookmark);
+								});
+							});
+							callback(bookmarksData);
+						},
+
+						error : function() {
+							var errorData = '<p style="font-weight: bold; color: red">ERROR: error<br><br>';
+							errorData += 'Please <a href="https://www.google.com/accounts/Login">login</a></p>';
+							callback(errorData);
+						}
+					});
+				}
+
+				retrieveXML(function(bookmarksData) {
+					safari.application.addEventListener("command", function(event) {
+						if(event.command === 'toggle-popup') {
+							var stuffToSend = [];
+							stuffToSend.push(bookmarksData);
+							stuffToSend.push(extensionSettings);
+							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
+						}
+					}, false);
+				});
+
+				safari.application.addEventListener('message', function(theEvent) {
+					var messageName = theEvent.name;
+					var messageData = theEvent.message;
+					if(messageName === 'openLink') {
+						if(extensionSettings.openMethod == "newTab") {
+							var newTab = safari.application.activeBrowserWindow.openTab();
+						}
+						newTab.url = messageData;
+					}
+
+					else if(messageName === 'refresh') {
+						retrieveXML(function(bookmarksData) {
+							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("dataRefreshed", bookmarksData);
+						});
+					}
+				}, false);
+
+				safari.extension.settings.addEventListener('change', function(event) {
+					extensionSettings[event.key] = event.newValue;
+					console.log("The setting " + event.key + " is now " + extensionSettings[event.key]);
+					var settingInfo = [event.key, event.newValue];
+					safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("settingChange", settingInfo);
+				}, false);
+			});
+		</script>
+	</head>
+</html>

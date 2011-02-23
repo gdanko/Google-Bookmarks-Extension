@@ -1,0 +1,11 @@
+popup.js
+	* Add dialog (need url)
+	* Edit dialog (need url)
+	* Remove dialog (need url)
+
+global.html
+	* Error checking
+	* Form validation
+	* Code optimization
+	* Open new method
+	

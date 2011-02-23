@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Author</key>
+	<string>Gary Danko</string>
+	<key>CFBundleDisplayName</key>
+	<string>Google Bookmarks</string>
+	<key>CFBundleIdentifier</key>
+	<string>net.gdanko.googlebookmarks</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>0.1.0</string>
+	<key>Chrome</key>
+	<dict>
+		<key>Global Page</key>
+		<string>global.html</string>
+		<key>Toolbar Items</key>
+		<array>
+			<dict>
+				<key>Command</key>
+				<string>toggle-popup</string>
+				<key>Identifier</key>
+				<string>popup-button</string>
+				<key>Image</key>
+				<string>images/icon.png</string>
+				<key>Label</key>
+				<string>Google Bookmarks</string>
+				<key>Palette Label</key>
+				<string>Google Bookmarks</string>
+				<key>Tool Tip</key>
+				<string>Google Bookmarks</string>
+			</dict>
+		</array>
+	</dict>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>Start</key>
+			<array>
+				<string>jquery-1.5.min.js</string>
+				<string>jquery-ui-1.8.9.custom.min.js</string>
+				<string>jquery.jstree.js</string>
+				<string>jquery.cookie.js</string>
+				<string>sha1.js</string>
+				<string>popup.js</string>
+			</array>
+		</dict>
+		<key>Stylesheets</key>
+		<array>
+			<string>css/cupertino/jquery-ui-1.8.9.custom.css</string>
+			<string>css/popup.css</string>
+		</array>
+	</dict>
+	<key>Description</key>
+	<string>Google Bookmarks</string>
+	<key>ExtensionInfoDictionaryVersion</key>
+	<string>1.0</string>
+	<key>Permissions</key>
+	<dict>
+		<key>Website Access</key>
+		<dict>
+			<key>Include Secure Pages</key>
+			<true/>
+			<key>Level</key>
+			<string>All</string>
+		</dict>
+	</dict>
+	<key>Update Manifest URL</key>
+	<string>http://www.gdanko.net/yagbe/update.plist</string>
+	<key>Website</key>
+	<string>http://www.gdanko.net</string>
+</dict>
+</plist>

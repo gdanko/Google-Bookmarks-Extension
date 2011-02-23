@@ -1,0 +1,15 @@
+/*
+$('div.ui-dialog-titlebar *').css( { 'padding-bottom' : '5px', 'padding-left' : '14px', 'padding-right' : '14px', 'padding-top' : '5px', 'background-color' : '#DEEDF7', 'font-size' : '100%' } );
+*/
+
+#gbm-master { text-align: left !important; }
+#gbm-content { background-color: #F4F4F4 !important; text-align: left !important; }
+#gbm-popup { overflow: hidden; background-color: #F4F4F4; }
+#gbm-search-box { font-size: 8pt; color: #D0D0D0; }
+#gbm-toolbar { overflow: hidden; }
+.gbm-toolbar-element { vertical-align: middle; }
+.jstree-classic { background-color: #F4F4F4; }
+.jstree-focused { background-color: #F4F4F4; }
+
+li.jstree-close { text-align: left !important; }
+li.jstree-open { text-align: left !important; }

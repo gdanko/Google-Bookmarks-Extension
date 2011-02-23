@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script type="text/javascript" src="jquery-1.5.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var stuffToSend = [];
+				var debugMode = true;
+				var debugText = '[DEBUG] ';
+				var isLoaded = 0;
+
+				function settings(fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, sortKey, sortOrder, debugMode, debugText, openMethod) {
+					this.fontSize = fontSize;
+					this.jstreeTheme = jstreeTheme;
+					this.popupHeight = popupHeight;
+					this.popupWidth = popupWidth;
+					this.showDotsInTree = showDotsInTree;
+					this.showIconsInTree = showIconsInTree;
+					this.sortKey = sortKey;
+					this.sortOrder = sortOrder;
+					this.debugMode = debugMode;
+					this.debugText = debugText;
+					this.openMethod = openMethod;
+				}
+
+				var extensionSettings = new settings();
+					extensionSettings.fontSize = safari.extension.settings.fontSize;
+					extensionSettings.jstreeTheme = safari.extension.settings.jstreeTheme;
+					extensionSettings.popupHeight = safari.extension.settings.popupHeight;
+					extensionSettings.popupWidth = safari.extension.settings.popupWidth;
+					extensionSettings.showDotsInTree = safari.extension.settings.showDotsInTree;
+					extensionSettings.showIconsInTree = safari.extension.settings.showIconsInTree;
+					extensionSettings.sortKey = safari.extension.settings.sortKey;
+					extensionSettings.sortOrder = safari.extension.settings.sortOrder;
+					extensionSettings.debugMode = debugMode;
+					extensionSettings.debugText = debugText;
+					extensionSettings.openMethod = safari.extension.settings.openMethod;
+
+				safari.application.addEventListener("command", function(event) {
+					if(event.command === 'toggle-popup') {
+						if(debugMode == true) {
+							console.log(debugText + (new Date()).getTime() + " isLoaded = " + isLoaded);
+						}
+						stuffToSend = [];
+						stuffToSend.push(isLoaded);
+						stuffToSend.push(extensionSettings);
+						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
+					}
+				}, false);
+
+				safari.application.addEventListener('message', function(theEvent) {
+					var messageName = theEvent.name;
+					var messageData = theEvent.message;
+					if(messageName === 'openLink') {
+						if(extensionSettings.openMethod == "newTab") {
+							var newTab = safari.application.activeBrowserWindow.openTab();
+							newTab.url = messageData;
+						} else if(extensionSettings.openMethod == "newWindow") {
+							var newWindow = safari.application.openBrowserWindow()
+							newWindow.activeTab.url = messageData;
+						} else if(extensionSettings.openMethod == "activeWindow") {
+							var activeTab = safari.application.activeBrowserWindow.activeTab();
+							activeTab.url = messageData;
+						}
+					}
+
+					else if(messageName === 'dataLoaded') {
+						isLoaded = 1;
+					}
+
+				}, false);
+
+				safari.extension.settings.addEventListener('change', function(event) {
+					extensionSettings[event.key] = event.newValue;
+					var settingInfo = [event.key, event.newValue];
+					safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("settingChange", settingInfo);
+				}, false);
+			});
+		</script>
+	</head>
+</html>

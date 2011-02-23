@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>DefaultValue</key>
+		<string>10pt</string>
+		<key>Key</key>
+		<string>fontSize</string>
+		<key>Title</key>
+		<string>Tree UI</string>
+		<key>Type</key>
+		<string>Group</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>9pt</string>
+		<key>Key</key>
+		<string>fontSize</string>
+		<key>Title</key>
+		<string>Font Size</string>
+		<key>Type</key>
+		<string>TextField</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>classic</string>
+		<key>Key</key>
+		<string>jstreeTheme</string>
+		<key>Title</key>
+		<string>Theme</string>
+		<key>Titles</key>
+		<array>
+			<string>Apple</string>
+			<string>Classic</string>
+			<string>Default</string>
+		</array>
+		<key>Type</key>
+		<string>ListBox</string>
+		<key>Values</key>
+		<array>
+			<string>apple</string>
+			<string>classic</string>
+			<string>default</string>
+		</array>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<false/>
+		<key>Key</key>
+		<string>showDotsInTree</string>
+		<key>Title</key>
+		<string>Show Dots in Tree</string>
+		<key>Type</key>
+		<string>CheckBox</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<true/>
+		<key>Key</key>
+		<string>showIconsInTree</string>
+		<key>Title</key>
+		<string>Show Icons in Tree</string>
+		<key>Type</key>
+		<string>CheckBox</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<real>400</real>
+		<key>Key</key>
+		<string>popupWidth</string>
+		<key>Title</key>
+		<string>Popup UI</string>
+		<key>Type</key>
+		<string>Group</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<real>400</real>
+		<key>Key</key>
+		<string>popupWidth</string>
+		<key>Title</key>
+		<string>Popup Width (px)</string>
+		<key>Type</key>
+		<string>TextField</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<real>550</real>
+		<key>Key</key>
+		<string>popupHeight</string>
+		<key>Title</key>
+		<string>Popup Height (px)</string>
+		<key>Type</key>
+		<string>TextField</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<true/>
+		<key>Key</key>
+		<string>debugMode</string>
+		<key>Title</key>
+		<string>Bookmarks</string>
+		<key>Type</key>
+		<string>Group</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>newTab</string>
+		<key>Key</key>
+		<string>openMethod</string>
+		<key>Title</key>
+		<string>Open</string>
+		<key>Titles</key>
+		<array>
+			<string>New Tab</string>
+			<string>New Window</string>
+		</array>
+		<key>Type</key>
+		<string>ListBox</string>
+		<key>Values</key>
+		<array>
+			<string>newTab</string>
+			<string>newWindow</string>
+		</array>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>title</string>
+		<key>Key</key>
+		<string>sortKey</string>
+		<key>Title</key>
+		<string>Sort Key</string>
+		<key>Titles</key>
+		<array>
+			<string>Title</string>
+			<string>Timestamp</string>
+		</array>
+		<key>Type</key>
+		<string>ListBox</string>
+		<key>Values</key>
+		<array>
+			<string>title</string>
+			<string>timestamp</string>
+		</array>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>asc</string>
+		<key>Key</key>
+		<string>sortOrder</string>
+		<key>Title</key>
+		<string>Sort Order</string>
+		<key>Titles</key>
+		<array>
+			<string>Ascending</string>
+			<string>Descending</string>
+		</array>
+		<key>Type</key>
+		<string>ListBox</string>
+		<key>Values</key>
+		<array>
+			<string>asc</string>
+			<string>desc</string>
+		</array>
+	</dict>
+</array>
+</plist>
