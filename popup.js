@@ -1,7 +1,8 @@
 if (window.top === window) {
 	$(document).ready(function() {
 		var extensionSettings;
-		var bookmarksData;
+		var strBookmarksData;
+		var bookmarksAllObjectsArray = [];
 
 		// Begin DOM injection
 		$('body').append('<div id="gbm-master">');
@@ -73,17 +74,17 @@ if (window.top === window) {
 		});
 
 		$('#gbm-add-button').click(function() {
-			//$('li[url="' + window.location.href + '"]').next().text(' is bookmark');
+			console.log("Add: " + window.location.href);
 			$('#gbm-add').dialog('open');
 		});
 
 		$('#gbm-delete-button').click(function() {
-			//$('li[url="' + window.location.href + '"]').next().text(' is bookmark');
+			console.log("Delete: " + window.location.href);
 			$('#gbm-delete').dialog('open');
 		});
 
 		$('#gbm-edit-button').click(function() {
-			//$('li[url="' + window.location.href + '"]').next().text(' is bookmark');
+			console.log("Edit: " + window.location.href);
 			$('#gbm-edit').dialog('open');
 		});
 
@@ -179,7 +180,7 @@ if (window.top === window) {
 
 			if (messageName === 'buttonPushed') {
 				extensionSettings = messageData[0];
-				bookmarksData = messageData[1];
+				strBookmarksData = messageData[1];
 				if (bookmarksPopup.dialog('isOpen')) {
 					bookmarksPopup.dialog('close');
 					return;
@@ -200,7 +201,7 @@ if (window.top === window) {
 				}
 				$('#gbm-content').children().empty();
 				$('#gbm-content').jstree('destroy')
-				$('#gbm-content').append(bookmarksData);
+				$('#gbm-content').append(strBookmarksData);
 				generateTree();
 				safari.self.tab.dispatchMessage('dataLoaded')
 				bookmarksPopup.dialog('open');
@@ -269,6 +270,10 @@ if (window.top === window) {
 				}
 			}
 		}
+
+		//function include(arr,obj) {
+		//	return (arr.indexOf(obj) != -1);
+		//}
 
 		function parseSettings(extensionSettings) {
 			$('body #gbm-master *').css('font-size', extensionSettings.fontSize);

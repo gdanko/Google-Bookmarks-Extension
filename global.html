@@ -9,15 +9,18 @@
 				var stuffToSend = [];
 				var debugMode = true;
 				var debugText = '[DEBUG] ';
-				var bookmarkItems = [];
-				var bookmarksData = '<ul id="gbm-labels">';
+
+				var bookmarksAllObjectsArray = [];
+				var bookmarkssByLabelObjectsArray = [];
+				var singleBookmarkLabels = [];
+				var strBookmarksData = '<ul id="gbm-labels">';
 		
-				function bookmarkItem(id, title, url, timestamp, label) {
+				function bookmarkItem(id, title, url, timestamp, labels) {
 					this.id = id;
 					this.title = title;
 					this.url = url;
 					this.timestamp = timestamp;
-					this.label = label;
+					this.labels = labels;
 				}
 
 				function settings(fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, sortKey, sortOrder, debugMode, debugText, openMethod) {
@@ -90,21 +93,55 @@
 						timeout : 5000,
 						dataType : "xml",
 						success : function(data) {
-							var bookmarkItems = [];
+							//  Build an array of all bookmarks as objects
+							bookmarksAllObjectsArray = [];
+							$(data).find('bookmark').each(function() {
+								singleBookmarkLabels = [];
+								var title = $(this).find('title:first').text();
+								var url = $(this).find('url:first').text();
+								var id = $(this).find('id:first').text();
+								var timestamp = $(this).find('timestamp:first').text();
+								var labels = $(this).find('label');
+								if(labels.length == 0) {
+									singleBookmarkLabels.push('Unlabeled');
+								} else {
+									for(var x = 0; x < labels.length; x++) {
+										singleBookmarkLabels.push(labels[x].textContent);
+									}
+								}
+								var strLabels = singleBookmarkLabels.join(",");
+								var bookmark = new bookmarkItem(id, title, url, timestamp, strLabels);
+								//bookmarksAllObjectsArray.push(bookmark);
+								bookmarksAllObjectsArray[url] = bookmark;
+							});
+							// Check if a bookmark exists
+							/*if(bookmarksAllObjectsArray["http://forum.xda-developers.com/showthread.php?t=709105xxxx"].title != undefined) {
+								myBookmark = bookmarksAllObjectsArray["http://forum.xda-developers.com/showthread.php?t=709105"];
+								console.log(myBookmark.id);
+								console.log(myBookmark.title);
+								console.log(myBookmark.url);
+								console.log(myBookmark.labels);
+								console.log(myBookmark.timestamp);
+							} else {
+								console.log("Not a bookmark");
+							}*/
+							return;
+							// Build the string
 							var bookmarkLabels = [];
 							$(data).find('label').each(function() {
 								bookmarkLabels.push($(this).text());
 							});
+
 							bookmarkLabels = bookmarkLabels.unique().sort();
 							for (x = 0; x < bookmarkLabels.length; x++) {
 								bookmarkItemsByLabel = [];
-								bookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="label"><a href="#">' + bookmarkLabels[x] + '</a>';
+								strBookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="label"><a href="#">' + bookmarkLabels[x] + '</a>';
 								$(data).find("label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
 									var title = $(this).closest('bookmark').find('title').text();
 									var url = $(this).closest('bookmark').find('url').text();
 									var id = $(this).closest('bookmark').find('id').text();
 									var timestamp = $(this).closest('bookmark').find('timestamp').text();
-									var bookmark = new bookmarkItem(id, title, url, timestamp, bookmarkLabels[x]);
+									var bookmark = new bookmarkItem(id, title, timestamp, bookmarkLabels[x]);
 									bookmarkItemsByLabel.push(bookmark)
 								});
 								bookmarkItemsByLabel.sort(function(a, b) {
@@ -126,13 +163,13 @@
 								});
 
 								for(var q = 0; q < bookmarkItemsByLabel.length; q++) {
-									bookmarksData += '<ul><li id="' + bookmarkItemsByLabel[q].id + '" label="' + bookmarkItemsByLabel[q].label + '" rel="bookmark" class="googleBookmark" url="' + bookmarkItemsByLabel[q].url + '" timestamp="' + bookmarkItemsByLabel[q].timestamp + '"><a href="#">' + bookmarkItemsByLabel[q].title + '</a></li></ul>';
+									strBookmarksData += '<ul><li id="' + bookmarkItemsByLabel[q].id + '" label="' + bookmarkItemsByLabel[q].label + '" rel="bookmark" class="googleBookmark" url="' + bookmarkItemsByLabel[q].url + '" timestamp="' + bookmarkItemsByLabel[q].timestamp + '"><a href="#">' + bookmarkItemsByLabel[q].title + '</a></li></ul>';
 								}
-								bookmarkItems.push(bookmarkItemsByLabel);
-								bookmarksData += '</li>' + '\n';
+								bookmarkssByLabelObjectsArray.push(bookmarkItemsByLabel);
+								strBookmarksData += '</li>' + '\n';
 							}
-							bookmarksData += '</ul>'+ '\n';
-							callback(bookmarksData);
+							strBookmarksData += '</ul>'+ '\n';
+							callback(strBookmarksData);
 						},
 
 						error : function() {
@@ -143,13 +180,12 @@
 					});
 				}
 
-				retrieveXML(function(bookmarksData) {
-					// Button listener is useless until the data is loaded
+				retrieveXML(function(strBookmarksData) {
 					safari.application.addEventListener("command", function(event) {
 						if(event.command === 'toggle-popup') {
 							stuffToSend = [];
 							stuffToSend.push(extensionSettings);
-							stuffToSend.push(bookmarksData);
+							stuffToSend.push(strBookmarksData);
 							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("buttonPushed", stuffToSend);
 						}
 					}, false);
