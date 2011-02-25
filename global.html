@@ -15,12 +15,12 @@
 				var singleBookmarkLabels = [];
 				var strBookmarksData = '<ul id="gbm-labels">';
 		
-				function bookmarkItem(id, title, url, timestamp, labels) {
+				function bookmarkItem(id, title, url, timestamp, strLabels) {
 					this.id = id;
 					this.title = title;
 					this.url = url;
 					this.timestamp = timestamp;
-					this.labels = labels;
+					this.labels = strLabels;
 				}
 
 				function settings(fontSize, jstreeTheme, popupHeight ,popupWidth, showDotsInTree, showIconsInTree, sortKey, sortOrder, debugMode, debugText, openMethod) {
@@ -74,6 +74,22 @@
 				    return $(el).text() === meta[3];
 				};
 
+				function isarray(input){
+					return typeof(input)=='object'&&(input instanceof Array);
+				}
+
+				function testURL(urlInfo) {
+					try {
+						if(bookmarksAllObjectsArray[urlInfo[0]].title != undefined) {
+							return bookmarksAllObjectsArray[urlInfo[0]];
+						}
+					}
+
+					catch(e) {
+						return urlInfo;
+					}
+				}
+
 				function retrieveXML(callback) {
 					if(extensionSettings.debugMode == true) {
 						console.log(extensionSettings.debugText + 'Force data load requested');
@@ -86,14 +102,17 @@
 						},
 						data: {
 							zx : (new Date()).getTime(),
-							output : "xml",
+							output : "rss",
 							num : "20000",
 							start : "0"
 						},
 						timeout : 5000,
 						dataType : "xml",
 						success : function(data) {
-							//  Build an array of all bookmarks as objects
+							console.log(data);
+							return;
+							var bookmarkLabels = [];
+							// Build an array of all bookmarks as objects
 							bookmarksAllObjectsArray = [];
 							$(data).find('bookmark').each(function() {
 								singleBookmarkLabels = [];
@@ -114,20 +133,8 @@
 								//bookmarksAllObjectsArray.push(bookmark);
 								bookmarksAllObjectsArray[url] = bookmark;
 							});
-							// Check if a bookmark exists
-							/*if(bookmarksAllObjectsArray["http://forum.xda-developers.com/showthread.php?t=709105xxxx"].title != undefined) {
-								myBookmark = bookmarksAllObjectsArray["http://forum.xda-developers.com/showthread.php?t=709105"];
-								console.log(myBookmark.id);
-								console.log(myBookmark.title);
-								console.log(myBookmark.url);
-								console.log(myBookmark.labels);
-								console.log(myBookmark.timestamp);
-							} else {
-								console.log("Not a bookmark");
-							}*/
-							return;
+
 							// Build the string
-							var bookmarkLabels = [];
 							$(data).find('label').each(function() {
 								bookmarkLabels.push($(this).text());
 							});
@@ -141,7 +148,7 @@
 									var url = $(this).closest('bookmark').find('url').text();
 									var id = $(this).closest('bookmark').find('id').text();
 									var timestamp = $(this).closest('bookmark').find('timestamp').text();
-									var bookmark = new bookmarkItem(id, title, timestamp, bookmarkLabels[x]);
+									var bookmark = new bookmarkItem(id, title, url, timestamp, bookmarkLabels[x]);
 									bookmarkItemsByLabel.push(bookmark)
 								});
 								bookmarkItemsByLabel.sort(function(a, b) {
@@ -161,14 +168,13 @@
 											return -1;
 									}
 								});
-
 								for(var q = 0; q < bookmarkItemsByLabel.length; q++) {
 									strBookmarksData += '<ul><li id="' + bookmarkItemsByLabel[q].id + '" label="' + bookmarkItemsByLabel[q].label + '" rel="bookmark" class="googleBookmark" url="' + bookmarkItemsByLabel[q].url + '" timestamp="' + bookmarkItemsByLabel[q].timestamp + '"><a href="#">' + bookmarkItemsByLabel[q].title + '</a></li></ul>';
 								}
 								bookmarkssByLabelObjectsArray.push(bookmarkItemsByLabel);
-								strBookmarksData += '</li>' + '\n';
+								strBookmarksData += '</li>';
 							}
-							strBookmarksData += '</ul>'+ '\n';
+							strBookmarksData += '</ul>';
 							callback(strBookmarksData);
 						},
 
@@ -205,6 +211,14 @@
 							var activeTab = safari.application.activeBrowserWindow.activeTab();
 							activeTab.url = messageData;
 						}
+						return;
+					}
+
+					if(messageName === 'testAddURL' || messageName === 'testDeleteURL' || messageName === 'testEditURL') {
+						result = testURL(messageData);
+						console.log(messageName);
+						console.log(result);
+						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage(messageName, result);
 					}
 
 				}, false);
@@ -214,6 +228,7 @@
 					var settingInfo = [event.key, event.newValue];
 					safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("settingChange", settingInfo);
 				}, false);
+
 			});
 		</script>
 	</head>

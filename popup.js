@@ -8,17 +8,17 @@ if (window.top === window) {
 		$('body').append('<div id="gbm-master">');
 			$('#gbm-master').append('<div id="gbm-dialogs">');
 				$('#gbm-dialogs').append('<div id="gbm-add">');
-					$('#gbm-add').append('Name:<br><input type="text" id="add_name" class="dialog" size="37"><br>');
-					$('#gbm-add').append('Location (URL):<br><input type="text" id="add_url" class="dialog" size="37"<br>');
-					$('#gbm-add').append('Labels:<br><input type="text" id="add_labels" class="dialog" size="37"><br>');
-					$('#gbm-add').append('Notes:<br><textarea rows="2" cols="26" id="add_notes" class="dialog"></textarea>');
+					$('#gbm-add').append('Name:<br><input type="text" id="add_title" class="gbm-dialog" size="37"><br>');
+					$('#gbm-add').append('Location (URL):<br><input type="text" id="add_url" class="gbm-dialog" size="37"<br>');
+					$('#gbm-add').append('Labels:<br><input type="text" id="add_labels" class="gbm-dialog" size="37"><br>');
+					$('#gbm-add').append('Notes:<br><textarea rows="2" cols="28" id="add_notes" class="gbm-dialog"></textarea>');
 				$('#gbm-dialogs').append('<div id="gbm-delete">');
 					$('#gbm-delete').append('<p>Are you sure you want to delete?</p>');
 				$('#gbm-dialogs').append('<div id="gbm-edit">');
-					$('#gbm-edit').append('Name:<br><input type="text" id="edit_name" class="dialog" size="37"><br>');
-					$('#gbm-edit').append('Location (URL):<br><input type="text" id="edit_url" class="dialog" size="37"<br>');
-					$('#gbm-edit').append('Labels:<br><input type="text" id="edit_labels" class="dialog" size="37"><br>');
-					$('#gbm-edit').append('Notes:<br><textarea rows="2" cols="26" id="edit_notes" class="dialog"></textarea>');
+					$('#gbm-edit').append('Name:<br><input type="text" id="edit_title" class="gbm-dialog" size="37"><br>');
+					$('#gbm-edit').append('Location (URL):<br><input type="text" id="edit_url" class="gbm-dialog" size="37"<br>');
+					$('#gbm-edit').append('Labels:<br><input type="text" id="edit_labels" class="gbm-dialog" size="37"><br>');
+					$('#gbm-edit').append('Notes:<br><textarea rows="2" cols="28" id="edit_notes" class="gbm-dialog"></textarea>');
 			$('#gbm-master').append('<div id="gbm-popup">');
 				$('#gbm-popup').append('<div id="gbm-toolbar">');
 					$('#gbm-toolbar').append('&nbsp;');
@@ -36,6 +36,7 @@ if (window.top === window) {
 		$('.gbm-toolbar-element').css( 'vertical-align', 'middle !important' );
 		$('#gbm-toolbar').css('overflow', 'hidden');
 		$('#gbm-toolbar').css( { 'text-align' : 'left !important', 'background-color' : '#F4F4F4 !important' } );
+		$('.gbm-dialog').css( 'font-size', '9pt' );
 		// End CSS
 
 		// Begin Handlers
@@ -74,18 +75,24 @@ if (window.top === window) {
 		});
 
 		$('#gbm-add-button').click(function() {
-			console.log("Add: " + window.location.href);
-			$('#gbm-add').dialog('open');
+			var urlInfo = [];
+			urlInfo[0] = window.location.href;
+			urlInfo[1] = $('title').text();
+			safari.self.tab.dispatchMessage('testAddURL', urlInfo);
 		});
 
 		$('#gbm-delete-button').click(function() {
-			console.log("Delete: " + window.location.href);
-			$('#gbm-delete').dialog('open');
+			var urlInfo = [];
+			urlInfo[0] = window.location.href;
+			urlInfo[1] = $('title').text();
+			safari.self.tab.dispatchMessage('testDeleteURL', urlInfo);
 		});
 
 		$('#gbm-edit-button').click(function() {
-			console.log("Edit: " + window.location.href);
-			$('#gbm-edit').dialog('open');
+			var urlInfo = [];
+			urlInfo[0] = window.location.href;
+			urlInfo[1] = $('title').text();
+			safari.self.tab.dispatchMessage('testEditURL', urlInfo);
 		});
 
 		$('.googleBookmark').live('click', function() {
@@ -181,20 +188,12 @@ if (window.top === window) {
 			if (messageName === 'buttonPushed') {
 				extensionSettings = messageData[0];
 				strBookmarksData = messageData[1];
+
 				if (bookmarksPopup.dialog('isOpen')) {
 					bookmarksPopup.dialog('close');
 					return;
 				}
 				parseSettings(extensionSettings);
-				
-				if(extensionSettings.debugMode == true) {
-					if($('#gbm-labels').length == 0) {
-						console.log("DOM not loaded");
-					} else {
-						console.log("DOM loaded");
-						console.log($('#gbm-labels').length);
-					}
-				}
 
 				if(extensionSettings.debugMode == true) {
 					console.log(extensionSettings.debugText + "Appending the DOM.");
@@ -269,11 +268,43 @@ if (window.top === window) {
 					return;
 				}
 			}
+
+			if(messageName === 'testAddURL') {
+				if(isarray(messageData) && messageData.length == 2) {
+					$('#add_title').val(messageData[1]);
+					$('#add_url').val(messageData[0]);
+					addBookmark.dialog('open');
+				} else {
+					// console.log(messageData.title + " is already a bookmark");
+				}
+			}
+
+			if(messageName === 'testDeleteURL') {
+				if(isarray(messageData) && messageData.length == 2) {
+					// Not a bookmark, do nothing
+				} else {
+					// Are you sure you want to delete "Title"?
+				}
+			}
+
+			if(messageName === 'testEditURL') {
+				if(isarray(messageData) && messageData.length == 2) {
+					// Do nothing
+				} else {
+					console.log(messageData.title + " is already a bookmark");
+					$('#edit_title').val(messageData.title);
+					$('#edit_url').val(messageData.url);
+					$('#edit_labels').val(messageData.labels);
+					$('#edit_notes').val(messageData.notes);
+					editBookmark.dialog('open');
+				}
+			}
+					
 		}
 
-		//function include(arr,obj) {
-		//	return (arr.indexOf(obj) != -1);
-		//}
+		function isarray(input){
+			return typeof(input)=='object'&&(input instanceof Array);
+		}
 
 		function parseSettings(extensionSettings) {
 			$('body #gbm-master *').css('font-size', extensionSettings.fontSize);
