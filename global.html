@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="jquery-1.5.min.js"></script>
 		<script type="text/javascript" src="sha1.js"></script>
 		<script type="text/javascript" src="extras.js"></script>
 		<script type="text/javascript">
@@ -11,6 +11,7 @@
 				var debugMode = true;
 				var debugText = '[DEBUG] ';
 				var sig;
+				var baseUrl = 'https://www.google.com/bookmarks/';
 
 				var bookmarksAllObjectsArray = [];
 				var bookmarkssByLabelObjectsArray = [];
@@ -70,19 +71,19 @@
 						console.log(extensionSettings.debugText + 'Force data load requested');
 					}
 					$.ajax({
-						type : "GET",
-						url : "https://www.google.com/bookmarks/",
+						'type' : 'GET',
+						'url' : baseUrl,
 						beforeSend : function(XMLHttpRequest) {
 							return true;
 						},
-						data: {
-							zx : (new Date()).getTime(),
-							output : "rss",
-							num : "20000",
-							start : "0"
+						'data' : {
+							'zx' : (new Date()).getTime(),
+							'output' : 'rss',
+							'num' : '20000',
+							'start' : '0'
 						},
-						timeout : 5000,
-						dataType : "xml",
+						'timeout' : 5000,
+						'dataType' : 'xml',
 						success : function(data, responseText) {
 							sig = $(data).find('signature:first').text();
 							var bookmarkLabels = [];
@@ -189,9 +190,80 @@
 
 					if(messageName === 'testAddURL' || messageName === 'testDeleteURL' || messageName === 'testEditURL') {
 						result = testURL(messageData);
-						console.log(messageName);
-						console.log(result);
 						safari.application.activeBrowserWindow.activeTab.page.dispatchMessage(messageName, result);
+					}
+
+					if(messageName === 'refresh') {
+						retrieveXML(function(strBookmarksData) {
+							stuffToSend = [];
+							stuffToSend.push(extensionSettings);
+							stuffToSend.push(strBookmarksData);
+							safari.application.activeBrowserWindow.activeTab.page.dispatchMessage('dataRefreshed', stuffToSend);
+						});
+					}
+
+					if(messageName === 'addBookmark') {
+						$.ajax({
+							'type' : 'GET',
+							'url' : 'https://www.google.com/bookmarks/mark',
+							beforeSend : function(XMLHttpRequest) {
+								return true;
+							},
+							'data' : {
+								'zx' : (new Date()).getTime(),
+								'bkmk' : messageData[1],
+								'title' : messageData[0],
+								'annotation' : messageData[3],
+								'labels' : messageData[2],
+								'prev' : '/lookup',
+								'sig' : sig
+							},
+							'timeout' : 5000,
+							success : function(data) {
+								retrieveXML(function(strBookmarksData) {
+									stuffToSend = [];
+									stuffToSend.push(extensionSettings);
+									stuffToSend.push(strBookmarksData);
+									safari.application.activeBrowserWindow.activeTab.page.dispatchMessage('dataRefreshed', stuffToSend);
+								});
+							},
+							
+							error : function() {
+								console.log('Error adding bookmark');
+							}
+						});
+					}
+
+					if(messageName === 'editBookmark') {
+						$.ajax({
+							type : 'GET',
+							url : 'https://www.google.com/bookmarks/mark',
+							beforeSend : function(XMLHttpRequest) {
+								return true;
+							},
+							data : {
+								zx: (new Date()).getTime(),
+								bkmk: messageData[1],
+								title: messageData[0],
+								annotation: messageData[3],
+								labels: messageData[2],
+								prev: '/lookup',
+								sig: sig
+							},
+							timeout : 5000,
+							success : function(data) {
+								retrieveXML(function(strBookmarksData) {
+									stuffToSend = [];
+									stuffToSend.push(extensionSettings);
+									stuffToSend.push(strBookmarksData);
+									safari.application.activeBrowserWindow.activeTab.page.dispatchMessage('dataRefreshed', stuffToSend);
+								});
+							},
+							
+							error : function() {
+								console.log('Error adding bookmark');
+							}
+						});
 					}
 
 				}, false);

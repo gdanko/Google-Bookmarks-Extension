@@ -1,3 +1,14 @@
-Google Bookmarks Extension for Safari 5
+Google Bookmarks Extension for Safari 5. Because no one else will make one.
 
-Because no one else will make one.
+What works:
+	* View bookmarks
+	* Launch bookmarks in either a new tab or a new window
+	* Add bookmarks
+	* Edit bookmarks
+	* All settings
+	* Search through bookmarks
+
+What needs to be done:
+	* Refresh doesn't work properly
+	* Delete bookmark hasn't been implemented
+	* Search labels in Add/Edit dialogs
