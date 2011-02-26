@@ -2,19 +2,22 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<script type="text/javascript" src="jquery-1.5.min.js"></script>
+		<script type="text/javascript" src="jquery-1.4.4.min.js"></script>
 		<script type="text/javascript" src="sha1.js"></script>
+		<script type="text/javascript" src="extras.js"></script>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				var stuffToSend = [];
 				var debugMode = true;
 				var debugText = '[DEBUG] ';
+				var sig;
 
 				var bookmarksAllObjectsArray = [];
 				var bookmarkssByLabelObjectsArray = [];
 				var singleBookmarkLabels = [];
 				var strBookmarksData = '<ul id="gbm-labels">';
-		
+
+
 				function bookmarkItem(id, title, url, timestamp, strLabels) {
 					this.id = id;
 					this.title = title;
@@ -50,34 +53,6 @@
 					extensionSettings.debugText = debugText;
 					extensionSettings.openMethod = safari.extension.settings.openMethod;
 
-				Array.prototype.uniqueByKey = function(array, key) {
-					// unique = foo.uniqueByKey(bar, "key").sort();
-					var r = [];
-					for(var i = 0; i < array.length; i++) {
-						if(r.indexOf(array[i][key]) == -1) {
-							r.push(array[i][key]);
-						}
-					}
-					return r;
-				}
-
-				Array.prototype.unique = function () {
-					// unique = foo.unique().sort();
-				    var r = [];
-				    for(var i = 0, n = this.length; i < n; i++) {
-				        if (this.lastIndexOf(this[i]) == i) r.push(this[i]);
-				    }
-				    return r;
-				}
-
-				$.expr[':'].contentIs = function(el, idx, meta) {
-				    return $(el).text() === meta[3];
-				};
-
-				function isarray(input){
-					return typeof(input)=='object'&&(input instanceof Array);
-				}
-
 				function testURL(urlInfo) {
 					try {
 						if(bookmarksAllObjectsArray[urlInfo[0]].title != undefined) {
@@ -108,19 +83,18 @@
 						},
 						timeout : 5000,
 						dataType : "xml",
-						success : function(data) {
-							console.log(data);
-							return;
+						success : function(data, responseText) {
+							sig = $(data).find('signature:first').text();
 							var bookmarkLabels = [];
 							// Build an array of all bookmarks as objects
 							bookmarksAllObjectsArray = [];
-							$(data).find('bookmark').each(function() {
+							$(data).find('item').each(function() {
 								singleBookmarkLabels = [];
 								var title = $(this).find('title:first').text();
-								var url = $(this).find('url:first').text();
-								var id = $(this).find('id:first').text();
-								var timestamp = $(this).find('timestamp:first').text();
-								var labels = $(this).find('label');
+								var url = $(this).find('link:first').text();
+								var id = $(this).find('bkmk_id:first').text();
+								var timestamp = getUnixTime($(this).find('pubDate:first').text());
+								var labels = $(this).find('bkmk_label');
 								if(labels.length == 0) {
 									singleBookmarkLabels.push('Unlabeled');
 								} else {
@@ -130,12 +104,11 @@
 								}
 								var strLabels = singleBookmarkLabels.join(",");
 								var bookmark = new bookmarkItem(id, title, url, timestamp, strLabels);
-								//bookmarksAllObjectsArray.push(bookmark);
 								bookmarksAllObjectsArray[url] = bookmark;
 							});
 
 							// Build the string
-							$(data).find('label').each(function() {
+							$(data).find('bkmk_label').each(function() {
 								bookmarkLabels.push($(this).text());
 							});
 
@@ -143,11 +116,11 @@
 							for (x = 0; x < bookmarkLabels.length; x++) {
 								bookmarkItemsByLabel = [];
 								strBookmarksData += '<li id="' + Sha1.hash(bookmarkLabels[x]) + '" rel="label"><a href="#">' + bookmarkLabels[x] + '</a>';
-								$(data).find("label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
-									var title = $(this).closest('bookmark').find('title').text();
-									var url = $(this).closest('bookmark').find('url').text();
-									var id = $(this).closest('bookmark').find('id').text();
-									var timestamp = $(this).closest('bookmark').find('timestamp').text();
+								$(data).find("bkmk_label:contentIs('" + bookmarkLabels[x] + "')").each(function() {
+									var title = $(this).closest('item').find('title').text();
+									var url = $(this).closest('item').find('link').text();
+									var id = $(this).closest('item').find('bkmk_id').text();
+									var timestamp = getUnixTime($(this).closest('item').find('pubDate').text());
 									var bookmark = new bookmarkItem(id, title, url, timestamp, bookmarkLabels[x]);
 									bookmarkItemsByLabel.push(bookmark)
 								});

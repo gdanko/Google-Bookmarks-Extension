@@ -134,10 +134,21 @@ if (window.top === window) {
 			'title' : 'Add Bookmark',
 			'buttons' : {
 				'Add' : function() {
-					// Add
+					var addBookmarkArray = [];
+					addBookmarkArray.push($('#add_title').val());
+					addBookmarkArray.push($('#add_url').val());
+					addBookmarkArray.push($('#add_labels').val());
+					addBookmarkArray.push($('#add_notes').val());
+					console.log(addBookmarkArray);
+					addBookmark.dialog('close');
+					safari.self.tab.dispatchMessage('addBookmark', addBookmarkArray);
 				},
 				'Cancel' : function() {
-					// Cancel
+					$('#add_title').val('');
+					$('#add_url').val('');
+					$('#add_labels').val('');
+					$('#add_notes').val('');
+					addBookmark.dialog('close');
 				}
 			}
 		});
@@ -173,10 +184,21 @@ if (window.top === window) {
 			'title' : 'Edit Bookmark',
 			'buttons' : {
 				'Save' : function() {
-					// Save
+					var editBookmarkArray = [];
+					editBookmarkArray.push($('#edit_title').val());
+					editBookmarkArray.push($('#edit_url').val());
+					editBookmarkArray.push($('#edit_labels').val());
+					editBookmarkArray.push($('#edit_notes').val());
+					console.log(editBookmarkArray);
+					editBookmark.dialog('close');
+					safari.self.tab.dispatchMessage('editBookmark', editBookmarkArray);
 				},
 				'Cancel' : function() {
-					// Cancel
+					$('#edit_title').val('');
+					$('#edit_url').val('');
+					$('#edit_labels').val('');
+					$('#edit_notes').val('');
+					editBookmark.dialog('close');
 				}
 			}
 		});
@@ -291,7 +313,6 @@ if (window.top === window) {
 				if(isarray(messageData) && messageData.length == 2) {
 					// Do nothing
 				} else {
-					console.log(messageData.title + " is already a bookmark");
 					$('#edit_title').val(messageData.title);
 					$('#edit_url').val(messageData.url);
 					$('#edit_labels').val(messageData.labels);
